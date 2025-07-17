@@ -100,7 +100,35 @@ const PlantingSceneSVG = () => (
   </svg>
 );
 
-// Custom SVG for Product Images (keeping existing)
+// Function to generate random, varied flecks for each lollipop - Performance Optimized
+const generateRandomFlecks = (colors, index) => {
+  const fleckCount = 3 + Math.floor(Math.random() * 3); // 3-5 flecks per lollipop (reduced for performance)
+  const flecks = [];
+  
+  for (let i = 0; i < fleckCount; i++) {
+    const angle = (Math.random() * 2 * Math.PI); // Random angle
+    const distance = 3 + Math.random() * 14; // Random distance from center (3-17)
+    const x = Math.cos(angle) * distance;
+    const y = Math.sin(angle) * distance;
+    
+    flecks.push({
+      x: x + (Math.random() - 0.5) * 4, // Add some randomness
+      y: y + (Math.random() - 0.5) * 4,
+      r: 2 + Math.random() * 3, // Much larger flecks: 2-5 radius
+      color: colors[Math.floor(Math.random() * colors.length)] || "#f4f0e6",
+      opacity: 0.6 + Math.random() * 0.4, // 0.6-1.0 opacity
+      sparkle: Math.random() > 0.7, // 30% chance of sparkle (reduced for performance)
+      sparkleOffset: {
+        x: (Math.random() - 0.5) * 2,
+        y: (Math.random() - 0.5) * 2
+      }
+    });
+  }
+  
+  return flecks;
+};
+
+// Enhanced Custom SVG for Product Images with Animated Flecks
 const ProductImageSVG = ({ baseColor, specks }) => (
   <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -111,13 +139,44 @@ const ProductImageSVG = ({ baseColor, specks }) => (
           <feMergeNode in="SourceGraphic" />
         </feMerge>
       </filter>
+      <filter id="fleck-sparkle" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="1" result="coloredBlur" />
+        <feMerge>
+          <feMergeNode in="coloredBlur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
     </defs>
     {/* Stick first (behind the lollipop) */}
     <rect x="48" y="45" width="4" height="45" fill="#fdfbf6" stroke="#000" strokeWidth="0.5" rx="2"/>
     {/* Lollipop circle on top */}
     <circle cx="50" cy="30" r="20" fill={baseColor} filter="url(#subtle-glow)" />
+    
+    {/* Enhanced animated flecks */}
     {specks.map((speck, i) => (
-      <circle key={i} cx={50 + speck.x} cy={30 + speck.y} r={speck.r} fill={speck.color} opacity={speck.opacity} />
+      <g key={i}>
+        {/* Main fleck */}
+        <circle 
+          cx={50 + speck.x} 
+          cy={30 + speck.y} 
+          r={speck.r} 
+          fill={speck.color} 
+          opacity={speck.opacity}
+          filter="url(#fleck-sparkle)"
+          className={`fleck fleck-${i}`}
+        />
+        {/* Optional sparkle overlay for some flecks */}
+        {speck.sparkle && (
+          <circle 
+            cx={50 + speck.x + speck.sparkleOffset.x} 
+            cy={30 + speck.y + speck.sparkleOffset.y} 
+            r={speck.r * 0.3} 
+            fill="white" 
+            opacity="0.8"
+            className={`sparkle sparkle-${i}`}
+          />
+        )}
+      </g>
     ))}
   </svg>
 );
@@ -280,11 +339,10 @@ const HomePage = () => {
               <div key={index} className="hero-product">
                 <Link to={`/product/${product.id}`} className="hero-product-link">
                   <div className="hero-product-image">
-                    <ProductImageSVG baseColor={product.colors[0]} specks={[
-                      {x: -10, y: 5, r: 2, color: product.colors[1], opacity: 0.8},
-                      {x: 8, y: -12, r: 1.5, color: product.colors[2] || "#f4f0e6", opacity: 0.7},
-                      {x: 15, y: 15, r: 1.8, color: "white", opacity: 0.9},
-                    ]}/>
+                    <ProductImageSVG 
+                      baseColor={product.colors[0]} 
+                      specks={generateRandomFlecks(product.colors, index)}
+                    />
                   </div>
                   <div className="hero-product-info">
                     <h4 className="hero-product-title">{product.name}</h4>
